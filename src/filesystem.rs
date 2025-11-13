@@ -7,13 +7,19 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::process;
 
+// This function's input called "path", is an input directory 'string'.
+// This function's output called "files", is a 'vector' containing all the files paths as 'PathBufs' (owned, mutable paths).
 pub fn get_files_in_directory(path: &str) -> Vec<PathBuf> {
+    // Creates an empty mutable 'vector' of 'PathBufs' called "files"
     let mut files: Vec<PathBuf> = Vec::new();
+    // Creates an iterator called "directory" over the entries in "path" with files returned as a 'DirEntry'.
     let directory = PathBuf::from(path).read_dir();
+    // Checks "directory" if there was an error creating the iterator. Prints error. Exits function true.
     if directory.is_err() {
         eprintln!("{} {}", "Directory not found:".red().bold(), path);
         process::exit(1);
     }
+    // Loop through "directory" for all 
     for entry in directory.unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();

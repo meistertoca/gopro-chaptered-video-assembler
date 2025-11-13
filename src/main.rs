@@ -21,9 +21,13 @@ use std::path::PathBuf;
 use std::process;
 
 fn main() {
+    // Starts the loggers using 'simplelog'.
     initialize_logging();
+    // Prints the opening header to the terminal with ['Package Name' 'Version'] surrounded by pipes. -> Side note want to fix output code.
     print_header();
+    // Creates a CLI Parser Structure to store arguments using 'clap'.
     let args = CliArgs::parse();
+    // Uncomment to print the parsed arguments.
     // print!("{:#?}", args);
 
     // Canonicalize input path up front. We don't handle the output path until later to avoid creating the output path if the user cancels the operation.
@@ -33,11 +37,12 @@ fn main() {
         .unwrap()
         .canonicalize()
         .expect("Could not canonicalize input dir path. Does it exist?");
-
+    // Calls function passing the input argument and the arguments structure.
     actually_do_things_with_input_and_output_paths(input_dir, args);
 }
 
 fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliArgs) {
+    // Creates
     let input_files = filesystem::get_files_in_directory(input_dir.to_str().unwrap());
     if input_files.is_empty() {
         error!(
