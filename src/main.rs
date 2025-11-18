@@ -21,9 +21,13 @@ use std::path::PathBuf;
 use std::process;
 
 fn main() {
+    // Starts the loggers using 'simplelog'.
     initialize_logging();
+    // Prints the opening header to the terminal with ['Package Name' 'Version'] surrounded by pipes. -> Side note want to fix output code.
     print_header();
+    // Creates a CLI Parser Structure to store arguments using 'clap'.
     let args = CliArgs::parse();
+    // Uncomment to print the parsed arguments.
     // print!("{:#?}", args);
 
     // Canonicalize input path up front. We don't handle the output path until later to avoid creating the output path if the user cancels the operation.
@@ -33,12 +37,14 @@ fn main() {
         .unwrap()
         .canonicalize()
         .expect("Could not canonicalize input dir path. Does it exist?");
-
+    // Calls function passing the input argument and the arguments structure.
     actually_do_things_with_input_and_output_paths(input_dir, args);
 }
 
 fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliArgs) {
+    // Creates a 'vector' containing all the files paths as 'PathBufs' from the input directory
     let input_files = filesystem::get_files_in_directory(input_dir.to_str().unwrap());
+    // Checks for empty 'vector'. Prints error. Exits function true.
     if input_files.is_empty() {
         error!(
             "{} {}",
@@ -46,6 +52,7 @@ fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliA
             input_dir.display()
         );
         process::exit(1);
+    // Or prints info. Length of 'vector' created.
     } else {
         info!(
             "Found {} files in directory: {}",
@@ -54,18 +61,20 @@ fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliA
         );
     }
 
-    // Extract data for each video file
+    // Parses each 'Pathbuf' checking for mp4's and adds them to a 'vector' of "GoProChapteredVideoFile" 'structs' to return.
     let videos = parse_gopro_files_directory(input_files);
 
     // TODO: Ensure all videos are valid mp4s. (#10)
-    // println!("{:?}", videos);
+    //println!("{:?}", videos);
 
-    // Sort the videos by video number, preparing them to be combined by mp4-merge
+    // Takes the "videos" 'vector' and sorting them into a 'HashMap' sorted by "video number", then "chapter", to return to be combined by mp4-merge.
     let mut multichapter_videos_sorted = gopro::sort_gopro_files(videos);
-    // Filter out videos that only have one chapter to be renamed separately
+    
+    // Clone "multichapter_videos_sorted".
     let mut single_chapter_videos = multichapter_videos_sorted.clone();
+    // Filter out videos that only have one chapter to be renamed separately.
     single_chapter_videos.retain::<_>(|_k, v| v.len() == 1);
-    // And then drop them from the multichapter videos map
+    // And then drop them from the multichapter videos map.
     multichapter_videos_sorted.retain::<_>(|_k, v| v.len() > 1);
 
     // Show expected output for multichapter combinations and single chapter renames
@@ -81,8 +90,11 @@ fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliA
             process::exit(0);
         }
     }
+    
+    // Creates a 'PathBuf' from the the "output" 'argument'.
     let output_dir = normalize_and_create_if_needed(args.output.clone().unwrap());
-
+    
+    // 
     combine_multichapter_videos(multichapter_videos_sorted.clone(), output_dir.clone());
 
     if args.copy_single_chapter_instead_of_renaming {

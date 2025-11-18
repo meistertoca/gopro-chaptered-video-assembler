@@ -16,6 +16,7 @@ pub fn combine_multichapter_videos(
         info!("{}", "No multichapter videos to combine".blue().bold());
         return;
     }
+    // TODO : Parallelize mp4-merge execution #20
     // Iterate through multichapter video map, and mp4-merge it.
     for video in multichapter_videos_sorted {
         let number = video.0;
