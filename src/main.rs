@@ -67,7 +67,7 @@ fn actually_do_things_with_input_and_output_paths(input_dir: PathBuf, args: CliA
     // TODO: Ensure all videos are valid mp4s. (#10)
     //println!("{:?}", videos);
 
-    // Takes the "videos" 'vector' and sorting them into a 'HashMap' sorted by "video number", then "chapter", to return to be combined by mp4-merge.
+    // Takes the "videos" 'vector' and sorting them into a 'HashMap' grouped by "video number", then "chapter", to return to be combined by mp4-merge.
     let mut multichapter_videos_sorted = gopro::sort_gopro_files(videos);
     
     // Clone "multichapter_videos_sorted".
