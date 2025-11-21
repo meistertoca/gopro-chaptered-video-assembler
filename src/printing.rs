@@ -53,23 +53,23 @@ pub fn print_expected_output(
         total_chapters_to_combine += value.len();
     }
     info!(
-        "These make up {} video(s), with {} total chapters to combine",
+        "Assembling {} video(s), with {} total chapters to combine.",
         total_videos_to_output.to_string().blue().bold(),
         total_chapters_to_combine.to_string().blue().bold()
     );
-    if total_videos_to_output > 0 {
-        info!("{:#?}", multichapter_videos_sorted);
-    }
     if copy_single_chapter_instead_of_renaming {
         info!(
-            "And {} single chapter video(s) to copy",
+            "Copying {} single chapter video(s).",
             single_chapter_videos.len().to_string().blue().bold()
         );
     } else {
         info!(
-            "And {} single chapter video(s) to rename",
+            "Renaming {} single chapter video(s).",
             single_chapter_videos.len().to_string().blue().bold()
         );
+    }
+    if total_videos_to_output > 0 {
+        info!("Chaptered Video Breakdown: {:#?}", multichapter_videos_sorted);
     }
 }
 

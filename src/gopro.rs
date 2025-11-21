@@ -22,7 +22,9 @@
 
 use std::collections::HashMap;
 use std::io::Error;
+use std::io::ErrorKind;
 use std::path::PathBuf;
+use colored::Colorize;
 
 use log::warn;
 
@@ -51,7 +53,7 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
     let filename = path.as_path().file_name().unwrap().to_str().unwrap();
     if path.is_dir() {
         return Err(Error::new(
-            std::io::ErrorKind::InvalidData,
+            std::io::ErrorKind::IsADirectory,
             format!("{} is a directory", filename),
         ));
     }
@@ -66,13 +68,25 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
 
     if extension == "jpg" && (prefix == "GO" || prefix == "G0") {
         return Err(Error::new(
-            std::io::ErrorKind::InvalidData,
+            std::io::ErrorKind::Unsupported,
             format!("{} is (likely) a GoPro image", filename),
+        ));
+    }
+    if extension == "thm" && (prefix == "GH" || prefix == "GX") {
+        return Err(Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("{} is (likely) a GoPro thumbnail", filename),
+        ));
+    }
+    if extension == "lrv" && prefix == "GL" {
+        return Err(Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("{} is (likely) a GoPro low-res video", filename),
         ));
     }
     if extension != "mp4" || (prefix != "GH" && prefix != "GX") {
         return Err(Error::new(
-            std::io::ErrorKind::InvalidData,
+            std::io::ErrorKind::Other,
             format!("Invalid file extension or prefix: {}", filename),
         ));
     }
@@ -80,7 +94,7 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
         Ok(v) => v,
         Err(e) => {
             return Err(Error::new(
-                std::io::ErrorKind::InvalidData,
+                std::io::ErrorKind::InvalidFilename,
                 format!(
                     "Error parsing video number: {filename}
                 n{e}"
@@ -92,7 +106,7 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
         Ok(v) => v,
         Err(e) => {
             return Err(Error::new(
-                std::io::ErrorKind::InvalidData,
+                std::io::ErrorKind::InvalidFilename,
                 format!("Error parsing chapter number: {filename}\n{e}"),
             ));
         }
@@ -107,6 +121,7 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
 
 pub fn parse_gopro_files_directory(input_files: Vec<PathBuf>) -> Vec<GoProChapteredVideoFile> {
     let mut videos: Vec<GoProChapteredVideoFile> = Vec::new();
+    let mut badfiles = vec![0,0,0,0];
     for file in input_files {
         let gopro_file_metadata: GoProChapteredVideoFile = match parse_gopro_file(file) {
             Ok(gopro_file_metadata) => {
@@ -114,12 +129,39 @@ pub fn parse_gopro_files_directory(input_files: Vec<PathBuf>) -> Vec<GoProChapte
                 gopro_file_metadata
             }
             Err(e) => {
-                warn!("Failed to parse GoPro video file: {}", e);
-                continue;
+                match e.kind() {
+                    ErrorKind::Unsupported => { // JPG is Unsupported
+                        badfiles[0] += 1;
+                        continue;
+                    },
+                    ErrorKind::InvalidData => { // THM thumbnail is InvalidData
+                        badfiles[1] += 1;
+                        continue;
+                    },
+                    ErrorKind::InvalidInput => { // LRV low-res video is InvalidInput
+                        badfiles[2] += 1;
+                        continue;
+                    },
+                    ErrorKind::Other => { // Not first (3) or MP4 is Other
+                        badfiles[3] += 1;
+                        continue;
+                    },
+                    _ => { // All other error types actually output their error.
+                        warn!("Failed to parse GoPro video file: {}", e);
+                        continue;
+                    }            
+                }
             }
         };
         videos.push(gopro_file_metadata);
     }
+    let total = badfiles[0] + badfiles[1] + badfiles[2] + badfiles[3];
+    warn!("Ignoring {total} files. {} JPG(s), {} THM(s), {} LRV(s), & {} Other(s).", 
+        badfiles[0].to_string().yellow().bold(), 
+        badfiles[1].to_string().yellow().bold(), 
+        badfiles[2].to_string().yellow().bold(), 
+        badfiles[3].to_string().yellow().bold()
+    );
     videos
 }
 
