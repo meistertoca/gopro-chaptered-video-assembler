@@ -121,7 +121,7 @@ pub fn parse_gopro_file(path: PathBuf) -> Result<GoProChapteredVideoFile, Error>
 
 pub fn parse_gopro_files_directory(input_files: Vec<PathBuf>) -> Vec<GoProChapteredVideoFile> {
     let mut videos: Vec<GoProChapteredVideoFile> = Vec::new();
-    let mut badfiles = vec![0,0,0,0];
+    let mut bad_files = vec![0,0,0,0];
     for file in input_files {
         let gopro_file_metadata: GoProChapteredVideoFile = match parse_gopro_file(file) {
             Ok(gopro_file_metadata) => {
@@ -131,19 +131,19 @@ pub fn parse_gopro_files_directory(input_files: Vec<PathBuf>) -> Vec<GoProChapte
             Err(e) => {
                 match e.kind() {
                     ErrorKind::Unsupported => { // JPG is Unsupported
-                        badfiles[0] += 1;
+                        bad_files[0] += 1;
                         continue;
                     },
                     ErrorKind::InvalidData => { // THM thumbnail is InvalidData
-                        badfiles[1] += 1;
+                        bad_files[1] += 1;
                         continue;
                     },
                     ErrorKind::InvalidInput => { // LRV low-res video is InvalidInput
-                        badfiles[2] += 1;
+                        bad_files[2] += 1;
                         continue;
                     },
                     ErrorKind::Other => { // Not first (3) or MP4 is Other
-                        badfiles[3] += 1;
+                        bad_files[3] += 1;
                         continue;
                     },
                     _ => { // All other error types actually output their error.
@@ -155,12 +155,12 @@ pub fn parse_gopro_files_directory(input_files: Vec<PathBuf>) -> Vec<GoProChapte
         };
         videos.push(gopro_file_metadata);
     }
-    let total = badfiles[0] + badfiles[1] + badfiles[2] + badfiles[3];
+    let total = bad_files[0] + bad_files[1] + bad_files[2] + bad_files[3];
     warn!("Ignoring {total} files. {} JPG(s), {} THM(s), {} LRV(s), & {} Other(s).", 
-        badfiles[0].to_string().yellow().bold(), 
-        badfiles[1].to_string().yellow().bold(), 
-        badfiles[2].to_string().yellow().bold(), 
-        badfiles[3].to_string().yellow().bold()
+        bad_files[0].to_string().yellow().bold(), 
+        bad_files[1].to_string().yellow().bold(), 
+        bad_files[2].to_string().yellow().bold(), 
+        bad_files[3].to_string().yellow().bold()
     );
     videos
 }
